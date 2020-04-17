@@ -112,6 +112,18 @@ const dateAtom = declareAtom(Date.now(), on => [on(init, () => Date.now())])
 
 > See FAQ on [why declare\*](/faq?id=why-declare)
 
+### Dynamic initial state
+
+If you need to dynamically generate atom state (on subscription) you can derive it from `init` action
+
+> see [tests](https://github.com/artalar/reatom/pull/326/files#diff-f212137c77c45e774722b9be132e9dc7)
+
+```js
+import { init } from '@reatom/core'
+
+const dateAtom = declareAtom(Date.now(), on => [on(init, () => Date.now())])
+```
+
 ## Store
 
 Communicating state**ful** context between actions and atoms.
