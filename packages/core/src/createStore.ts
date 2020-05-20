@@ -9,7 +9,7 @@ import {
   getOwnKeys,
 } from './shared'
 import { Action, PayloadActionCreator } from './declareAction'
-import { Atom, initAction, getState } from './declareAtom'
+import { Atom, initAction, getState, init } from './declareAtom'
 
 type ActionsSubscriber = (action: Action<unknown>, stateDiff: State) => any
 type SubscribeFunction = {
@@ -24,8 +24,12 @@ type GetStateFunction = {
   (): State
 }
 
+export type Dispatch =
+  | ((action: Action<unknown>) => void)
+  | ((actions: Action<unknown>[]) => void)
+
 export type Store = {
-  dispatch: (action: Action<unknown>) => void
+  dispatch: Dispatch
   subscribe: SubscribeFunction
   getState: GetStateFunction
   bind: <A extends (...a: any[]) => BaseAction>(
@@ -162,23 +166,37 @@ export function createStore(
     }
   }
 
-  function dispatch(action: Action<any>) {
-    const { type, payload, reactions } = action
-    if (
-      typeof action !== 'object' ||
-      action === null ||
-      typeof type !== 'string'
-    )
-      throwError('Invalid action')
+  function dispatch(actions: Action<unknown> | Action<unknown>[]) {
+    if (!Array.isArray(actions)) actions = [actions]
 
-    const ctx = createCtx(state, action)
-    storeTree.forEach(type, ctx)
+    const ctx = createCtx(state, initAction)
+    for (let i = 0; i < actions.length; i++) {
+      const action = actions[i]
+      const { type, payload, reactions } = action
+
+      ctx.type = type
+      ctx.payload = payload
+
+      console.log({ action })
+
+      if (
+        typeof action !== 'object' ||
+        action === null ||
+        typeof type !== 'string' ||
+        (actions.length > 1 && type === initAction.type)
+      )
+        throwError(`Invalid action №${i + 1}`)
+
+      storeTree.forEach(type, ctx)
+    }
 
     const { changedIds, stateNew } = ctx
 
     listeners = nextListeners
 
-    if (type === initAction.type) state = payload || {}
+    if (actions.length === 0 && actions[0].type === initAction.type)
+      state = (actions[0].payload as any) || {}
+
     if (changedIds.length > 0) {
       assign(state, stateNew)
       for (let i = 0; i < changedIds.length; i++) {
@@ -187,10 +205,18 @@ export function createStore(
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    callFromList(reactions || [], payload, store)
-    callFromList(listeners.get(type) || [], payload)
-    callFromList((dispatchListeners = nextDispatchListeners), action, stateNew)
+    actions.forEach(action => {
+      const { type, payload, reactions } = action
+      callFromList(reactions || [], payload, store)
+      callFromList(listeners.get(type) || [], payload)
+
+      // TODO: is it correct behavior? Mb we need a call `dispatchListeners` with all array of actions
+      callFromList(
+        (dispatchListeners = nextDispatchListeners),
+        action,
+        stateNew,
+      )
+    })
   }
 
   const bind: Store['bind'] = actionCreator => (...a) =>

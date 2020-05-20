@@ -524,10 +524,7 @@ describe('@reatom/core', () => {
     )
     expect(
       getTree(
-        map(
-          declareAtom(Symbol('123'), 0, () => []),
-          v => v,
-        ),
+        map(declareAtom(Symbol('123'), 0, () => []), v => v),
       ).id.toString(),
     ).toBe('Symbol(123 [map])')
   })
@@ -925,6 +922,32 @@ describe('@reatom/core', () => {
       store.subscribe(dateAtom, () => {})
       const date3 = store.getState(dateAtom)
       expect(date1).not.toBe(date3)
+    })
+  })
+
+  describe('store', () => {
+    test('batch actions', () => {
+      const reaction1 = jest.fn()
+      const reaction2 = jest.fn()
+
+      const action1 = declareAction(reaction1)
+      const action2 = declareAction(reaction2)
+
+      const atom1 = declareAtom(0, on => [on(action1, s => s + 1)])
+      const atom2 = declareAtom(0, on => [on(action2, s => s + 1)])
+
+      const store = createStore(combine([atom1, atom2]))
+
+      expect(store.getState(atom1)).toBe(0)
+      expect(store.getState(atom2)).toBe(0)
+
+      console.log('---TEST---')
+      store.dispatch([action1(), action2()])
+
+      expect(store.getState(atom1)).toBe(1)
+      expect(store.getState(atom2)).toBe(1)
+      expect(reaction1).toBeCalled()
+      expect(reaction2).toBeCalled()
     })
   })
 })
