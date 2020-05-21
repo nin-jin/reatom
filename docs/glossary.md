@@ -165,12 +165,12 @@ Important note about `getState(myAtom)`, dependent of atom status:
 
 > **Next:**
 >
-> - <a href="https://reatom.js.org/#/examples">Examples</a>
-> - <a href="https://reatom.js.org/#/faq">FAQ</a>
+> - [Examples](https://reatom.js.org/#/examples)
+> - [FAQ](https://reatom.js.org/#/faq)
 > - Guides
->   - <a href="https://reatom.js.org/#/guides/naming-conventions.md">Naming Conventions</a>
->   - <a href="https://reatom.js.org/#/guides/file-structure.md">File Structure</a>
->   - <a href="https://reatom.js.org/#/guides/code-splitting.md">Code Splitting</a>
->   - <a href="https://reatom.js.org/#/guides/server-side-rendering.md">Server Side Rendering</a>
->   - <a href="https://reatom.js.org/#/guides/migration-from-redux.md">Migration from Redux</a>
->   - <a href="https://reatom.js.org/#/guides/IoC.md">Inversion of control</a>
+>   - [Naming Conventions](/guides/naming-conventions.md)
+>   - [File Structure](/guides/file-structure.md)
+>   - [Code Splitting](/guides/code-splitting.md)
+>   - [Server Side Rendering](/guides/server-side-rendering.md)
+>   - [Migration from Redux](/guides/migration-from-redux.md)
+>   - [Inversion of control](/guides/IoC.md)
