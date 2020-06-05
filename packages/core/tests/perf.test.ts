@@ -64,7 +64,7 @@ describe('redux-reatom', () => {
       }
     }
 
-    const reduxReducerCombineFabric = id =>
+    const reduxReducerCombineFabric = (id) =>
       combineReducersRedux({
         '1': reduxReducerFabric(id, '1'),
         '2': reduxReducerFabric(id, '2'),
@@ -92,10 +92,12 @@ describe('redux-reatom', () => {
     const reatomAtomFabric = (parentId, initialState) => {
       const prefix =
         parentId !== '10' && !(parentId % 2) ? parentId - 1 : parentId
-      return (reatomNestedChildren[parentId][initialState] = declareAtom(
+      return (reatomNestedChildren[parentId][
+        initialState
+      ] = declareAtom(
         `reatomAtomFabric${parentId + initialState}`,
         initialState,
-        handle => [
+        (handle) => [
           handle(
             (reatomActions[`${prefix}1`] =
               reatomActions[`${prefix}1`] || declareAction(`${prefix}1`)),
@@ -125,7 +127,7 @@ describe('redux-reatom', () => {
       ))
     }
 
-    const reatomAtomCombineFabric = id =>
+    const reatomAtomCombineFabric = (id) =>
       (reatomChildren[id] = combine({
         '1': reatomAtomFabric(id, '1'),
         '2': reatomAtomFabric(id, '2'),
@@ -185,7 +187,7 @@ describe('redux-reatom', () => {
         ))
     }
 
-    const effectorReducerCombineFabric = id =>
+    const effectorReducerCombineFabric = (id) =>
       (effectorChildren[id] = effector.createStoreObject({
         '1': effectorReducerFabric(id, '1'),
         '2': effectorReducerFabric(id, '2'),
@@ -204,9 +206,9 @@ describe('redux-reatom', () => {
 
     let reduxSubscribtionsCallsCount = 0
     const reduxSubscribeChildren = () =>
-      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(id => {
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map((id) => {
         const subscriberMap = createSelector(
-          state => state[id],
+          (state) => state[id],
           () => (heavyCalculates(), reduxSubscribtionsCallsCount++),
         )
         const unsubscribe = storeRedux.subscribe(() =>
@@ -217,9 +219,9 @@ describe('redux-reatom', () => {
           return unsubscribe
         }
 
-        const unsubscribers = ['1', '2', '3', '4', '5'].map(nestedId => {
+        const unsubscribers = ['1', '2', '3', '4', '5'].map((nestedId) => {
           const subscriberNestedMap = createSelector(
-            state => state[id][nestedId],
+            (state) => state[id][nestedId],
             () => (heavyCalculates(), reduxSubscribtionsCallsCount++),
           )
           return storeRedux.subscribe(() =>
@@ -229,13 +231,13 @@ describe('redux-reatom', () => {
 
         return () => {
           unsubscribe()
-          unsubscribers.forEach(f => f())
+          unsubscribers.forEach((f) => f())
         }
       })
 
     let reatomSubscribtionsCallsCount = 0
     const reatomSubscribeChildren = () =>
-      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(id => {
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map((id) => {
         if (id === '10') {
           return storeReatom.subscribe(
             reatomNestedChildren[10][10],
@@ -248,7 +250,7 @@ describe('redux-reatom', () => {
           () => (heavyCalculates(), reatomSubscribtionsCallsCount++),
         )
 
-        const unsubscribers = ['1', '2', '3', '4', '5'].map(nestedId =>
+        const unsubscribers = ['1', '2', '3', '4', '5'].map((nestedId) =>
           storeReatom.subscribe(
             reatomNestedChildren[id][nestedId],
             () => (heavyCalculates(), reatomSubscribtionsCallsCount++),
@@ -257,13 +259,13 @@ describe('redux-reatom', () => {
 
         return () => {
           unsubscribe()
-          unsubscribers.forEach(f => f())
+          unsubscribers.forEach((f) => f())
         }
       })
 
     let effectorSubscribtionsCallsCount = 0
     const effectorSubscribeChildren = () =>
-      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(id => {
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map((id) => {
         if (id === '10') {
           return effectorNestedChildren[10][10].watch(
             () => (heavyCalculates(), effectorSubscribtionsCallsCount++),
@@ -274,7 +276,7 @@ describe('redux-reatom', () => {
           () => (heavyCalculates(), effectorSubscribtionsCallsCount++),
         )
 
-        const unsubscribers = ['1', '2', '3', '4', '5'].map(nestedId =>
+        const unsubscribers = ['1', '2', '3', '4', '5'].map((nestedId) =>
           effectorNestedChildren[id][nestedId].watch(
             () => (heavyCalculates(), effectorSubscribtionsCallsCount++),
           ),
@@ -282,7 +284,7 @@ describe('redux-reatom', () => {
 
         return () => {
           unsubscribe()
-          unsubscribers.forEach(f => f())
+          unsubscribers.forEach((f) => f())
         }
       })
 
@@ -635,7 +637,7 @@ describe('redux-reatom', () => {
     test('unsubscribe [redux]', () => {
       const start = performance.now()
 
-      unsubscribersRedux.map(f => f())
+      unsubscribersRedux.map((f) => f())
 
       log('unsubscribe', '[redux]', (performance.now() - start).toFixed(3))
       // fill selectors cache
@@ -645,7 +647,7 @@ describe('redux-reatom', () => {
     test('unsubscribe [reatom]', () => {
       const start = performance.now()
 
-      unsubscribersReatom.map(f => f())
+      unsubscribersReatom.map((f) => f())
 
       log('unsubscribe', '[reatom]', (performance.now() - start).toFixed(3))
     })
@@ -653,7 +655,7 @@ describe('redux-reatom', () => {
     test('unsubscribe [effector]', () => {
       const start = performance.now()
 
-      unsubscribersEffector.map(f => f())
+      unsubscribersEffector.map((f) => f())
 
       log('unsubscribe', '[effector]', (performance.now() - start).toFixed(3))
     })

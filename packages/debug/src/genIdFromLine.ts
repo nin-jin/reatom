@@ -35,7 +35,7 @@ class StackTraceParser extends Error {
       err: Error,
       stackTraces: NodeJS.CallSite[],
     ): Trace[] {
-      return stackTraces.map(t => ({
+      return stackTraces.map((t) => ({
         file: t.getFileName(),
         name: t.getFunctionName(),
         line: t.getLineNumber(),

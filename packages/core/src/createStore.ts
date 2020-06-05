@@ -154,7 +154,7 @@ export function createStore(
 
       if (isLazy && _listeners.length === 0) {
         nextListeners.delete(targetId)
-        storeTree.disunion(targetTree, id => {
+        storeTree.disunion(targetTree, (id) => {
           nextListeners.delete(id)
           delete state[id as string]
         })
@@ -193,7 +193,7 @@ export function createStore(
     callFromList((dispatchListeners = nextDispatchListeners), action, stateNew)
   }
 
-  const bind: Store['bind'] = actionCreator => (...a) =>
+  const bind: Store['bind'] = (actionCreator) => (...a) =>
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     store.dispatch(actionCreator(...a))
 

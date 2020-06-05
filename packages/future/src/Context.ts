@@ -111,10 +111,7 @@ export class Context {
 
   protected _listeners: Fn<[TransactionContext['cache']]>[] = []
 
-  _link(
-    target: Observable<any, any>,
-    dependent?: Observable<any, any>,
-  ) {
+  _link(target: Observable<any, any>, dependent?: Observable<any, any>) {
     const { _key, _deps, _init } = target
 
     let targetInstance = this.get(_key)
@@ -142,10 +139,7 @@ export class Context {
     return targetInstance
   }
 
-  _unlink(
-    target: Observable<any, any>,
-    dependent?: Observable<any, any>,
-  ) {
+  _unlink(target: Observable<any, any>, dependent?: Observable<any, any>) {
     const { _key, _deps } = target
 
     const targetInstance = this.get(_key)

@@ -54,7 +54,7 @@ const fetchUserDone = declareAction()
 const fetchUser = declareAction(
   name, // or type - optional
   (payload, store) =>
-    fetch('/user', payload).then(response =>
+    fetch('/user', payload).then((response) =>
       store.dispatch(fetchUserDone(response)),
     ),
 )
@@ -81,15 +81,15 @@ import { declareAtom } from '@reatom/core'
 const countAtom = declareAtom(
   'count', // name (optional!)
   0, // initial state
-  on => [
+  (on) => [
     // reducers definitions:
     // `on(dependedDeclaredActionOrAtom, reducer)`
     // reducer: (oldState, dependedValues) => newState
-    on(increment, state => state + 1),
+    on(increment, (state) => state + 1),
     on(add, (state, payload) => state + payload),
   ],
 )
-const countDoubledAtom = declareAtom(0, on => [
+const countDoubledAtom = declareAtom(0, (on) => [
   on(countAtom, (state, count) => count * 2),
 ])
 // shortcut:
@@ -105,7 +105,7 @@ If you need to dynamically generate atom state (on subscription) you can derive 
 ```js
 import { init } from '@reatom/core'
 
-const dateAtom = declareAtom(Date.now(), on => [on(init, () => Date.now())])
+const dateAtom = declareAtom(Date.now(), (on) => [on(init, () => Date.now())])
 ```
 
 > [\*](https://github.com/calmm-js/kefir.atom/blob/master/README.md#related-work) The term "atom" is borrowed from [Clojure](http://clojure.org/reference/atoms) and comes from the idea that one only performs ["atomic"](https://en.wikipedia.org/wiki/Read-modify-write), or [race-condition](https://en.wikipedia.org/wiki/Race_condition) free, operations on individual atoms. Besides that reatoms atoms is stateless and seamlessly like [Futures](https://en.wikipedia.org/wiki/Futures_and_promises) in this case.
@@ -121,7 +121,7 @@ If you need to dynamically generate atom state (on subscription) you can derive 
 ```js
 import { init } from '@reatom/core'
 
-const dateAtom = declareAtom(Date.now(), on => [on(init, () => Date.now())])
+const dateAtom = declareAtom(Date.now(), (on) => [on(init, () => Date.now())])
 ```
 
 ## Store
@@ -146,8 +146,8 @@ store.dispatch(declaredAction(payload))
 
 /* SUBSCRIBING */
 
-store.subscribe(atom, atomValue => 'side effect')
-store.subscribe(declaredAction, actionPayload => 'side effect')
+store.subscribe(atom, (atomValue) => 'side effect')
+store.subscribe(declaredAction, (actionPayload) => 'side effect')
 store.subscribe((dispatchedAction, stateDiff) => 'side effect')
 
 /* STATE */

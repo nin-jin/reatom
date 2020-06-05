@@ -204,7 +204,7 @@ export function map<T, TSource = unknown>(
     name as AtomName,
     // FIXME: initialState for `map` :thinking:
     null as any,
-    handle =>
+    (handle) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       handle(source as Atom<TSource>, (state, payload) => mapper!(payload)),
   )
@@ -234,13 +234,13 @@ export function combine<T extends AtomsMap | TupleOfAtoms>(
     name = isArray
       ? Symbol(
           `[${keys
-            .map(k => getName(getTree((shape as TupleOfAtoms)[k as any]).id))
+            .map((k) => getName(getTree((shape as TupleOfAtoms)[k as any]).id))
             .join()}]`,
         )
       : Symbol(`{${keys.map(getName).join()}}`)
 
-  const atom = declareAtom(name as AtomName, isArray ? [] : {}, reduce =>
-    keys.forEach(key =>
+  const atom = declareAtom(name as AtomName, isArray ? [] : {}, (reduce) =>
+    keys.forEach((key) =>
       reduce((shape as any)[key], (state, payload) => {
         const newState: any = isArray
           ? (state as any[]).slice(0)

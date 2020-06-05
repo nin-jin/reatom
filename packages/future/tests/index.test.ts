@@ -46,7 +46,7 @@ describe('@reatom/future', () => {
     })
     const cb = jest.fn()
 
-    fetchConcurrent.chainAsync(v => v).subscribe(cb)
+    fetchConcurrent.chainAsync((v) => v).subscribe(cb)
 
     fetchConcurrent(1)
     fetchConcurrent(2)

@@ -114,10 +114,7 @@ export class Observable<I = unknown, O = I> {
 
     const _depth = _deps.reduce(
       (acc, o, i) => (
-        invalid(
-          o instanceof Observable === false,
-          `dependency #${i + 1}`,
-        ),
+        invalid(o instanceof Observable === false, `dependency #${i + 1}`),
         Math.max(acc, o._depth + 1)
       ),
       0,
@@ -164,9 +161,7 @@ export class Observable<I = unknown, O = I> {
     this._lift = _lift
   }
 
-  pipe<T1 extends TransactionCache<O>>(
-    o1: Options<O, T1>,
-  ): Observable<I, T1>
+  pipe<T1 extends TransactionCache<O>>(o1: Options<O, T1>): Observable<I, T1>
 
   pipe<T1 extends TransactionCache<I>, T2 extends TransactionCache<T1>>(
     o1: Options<O, T1>,

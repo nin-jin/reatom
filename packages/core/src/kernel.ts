@@ -69,19 +69,19 @@ export class Tree {
   union(tree: Tree) {
     tree.fnsMap.forEach((set, key) => {
       const fns = this._getFns(key)
-      set.forEach(fn => fns.add(fn))
+      set.forEach((fn) => fns.add(fn))
     })
   }
 
   disunion(tree: Tree, cb: (key: TreeId) => any) {
     tree.fnsMap.forEach((set, key) => {
       const fns = this._getFns(key)
-      set.forEach(fn => fns.delete(fn) && cb(fn._ownerAtomId))
+      set.forEach((fn) => fns.delete(fn) && cb(fn._ownerAtomId))
     })
   }
 
   forEach(key: Leaf, ctx: Ctx) {
     const setCounted = this.fnsMap.get(key)
-    if (setCounted) setCounted.forEach(fn => fn(ctx))
+    if (setCounted) setCounted.forEach((fn) => fn(ctx))
   }
 }
