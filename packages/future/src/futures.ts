@@ -90,15 +90,17 @@ export function createFuture<I, O>(options: Options<I, O>): Future<I, O> {
               if (kind === 'error') return depCache as any
 
               if ('state' in cache === false) cache.state = defaultState
+              const { state } = cache
 
-              const newState = fn(
-                depCache.value as FilterStopNever<O>,
-                cache.state!,
-              )
+              const newState = fn(depCache.value as FilterStopNever<O>, state!)
 
-              if (newState === cache.state) return STOP as any
+              if (newState === state) return STOP as any
 
-              return (cache.state = newState)
+              return new TransactionCache({
+                value: cache.state = newState,
+                kind: 'payload',
+                rollback: () => (cache.state = state),
+              }) as any
             },
             deps: [o],
             lift: (value: I, tCtx) => o._lift(value, tCtx),
