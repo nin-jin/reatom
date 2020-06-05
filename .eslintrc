@@ -73,7 +73,7 @@
         "tsx": "never"
       }
     ],
-    "max-classes-per-file": "warn",
+    "max-classes-per-file": "off",
     "no-continue": "off",
     "no-nested-ternary": "warn",
     "no-param-reassign": "off",
