@@ -1,16 +1,12 @@
 import {
+  Atom,
   Collection,
   Emitter,
-  EmitterAny,
-  ReatomError,
-  Link,
-  LinkOptions,
-  Transaction,
-  PAYLOAD,
-  STOP,
-  link,
-  Atom,
   invalid,
+  link,
+  Link,
+  STOP,
+  Transaction,
 } from './internal'
 
 /** join atoms handlers to work it with single state */
@@ -18,18 +14,18 @@ export function join<State>(
   ...links: Array<Atom<any, State, any>>
 ): Atom<any, State>
 /** join links handlers to work it with single cache */
-export function join<Output, Cache extends Collection = Collection>(
-  ...links: Array<Link<any, Output, Cache, any>>
+export function join<Output, Cache extends Collection = {}>(
+  ...links: Array<Link<any, Output, Cache>>
 ): Link<any, Output, Cache>
 export function join(
-  ...links: Array<Link<any, any, any, any> | Atom<any, any, any>>
-): Link<any, any, any, any> | Atom<any, any, any> {
-  const up = links.map((link) => {
+  ...links: Array<Link<any, any, any> | Atom<any, any, any>>
+): Link<any, any, any> | Atom<any, any, any> {
+  const up = links.map(link => {
     if (link instanceof Atom) atomsCount++
     return link.up[0]
   })
   let atomsCount = 0
-  const parent = new Emitter((t) => up.map((l) => t.get(l)), up)
+  const parent = new Emitter(t => up.map(l => t.get(l)), up)
 
   invalid(
     atomsCount !== 0 && atomsCount !== links.length,
@@ -37,7 +33,7 @@ export function join(
   )
 
   function onNext(
-    this: Link<any, any, any, any>,
+    this: Link<any, any, any>,
     input: any,
     cache: any,
     t: Transaction,
@@ -55,7 +51,7 @@ export function join(
 
       if (payload === STOP) return acc
 
-      // @ts-expect-error
+      // @ts-ignore
       const result = link._reducer(payload, acc)
 
       return result === STOP ? acc : result
@@ -86,11 +82,11 @@ export function join(
     // a.link((n, c) => n + 3),
   )
 
-  b.subscribe((v) => {
+  b.subscribe(v => {
     v //?
   })
 
   a.call(1)
-})().catch((e) => {
+})().catch(e => {
   console.log(e)
 })

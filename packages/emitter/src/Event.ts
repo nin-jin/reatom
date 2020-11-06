@@ -1,4 +1,4 @@
-import { callSafety, Emitter, EmitterAny } from './internal'
+import { Emitter, EmitterAny } from './internal'
 
 export const STOP: unique symbol = Symbol(`@@Reatom: STOP token`)
 export type STOP = typeof STOP
@@ -12,7 +12,7 @@ export class Event {
 
   /** Schedule emitter for it call after topological sorting */
   protected schedule(emitters: Array<EmitterAny>) {
-    emitters.forEach((emitter) => {
+    emitters.forEach(emitter => {
       // tiny implementation of topological sorting,
       // pretty effective, but O(n^2) for `Emitter.to` (bad for a lot of children)
       for (let i = 0; i < this.queue.length; i++) {
@@ -31,18 +31,24 @@ export class Event {
     return this.queue.pop()
   }
 
+  // TODO: is it a better design?
+  protected notify() {
+    this.data.forEach((value, emitter) => value !== STOP && emitter.emit(value))
+  }
+
   /** Set result of emitter function call */
-  set<T>(emitter: Emitter<T>, data: T): void {
+  protected set<T>(emitter: Emitter<T>, data: T): void {
     this.data.set(emitter, data)
   }
+
   /** Get result of emitter function call */
-  get<T>(emitter: Emitter<T>): T | STOP {
+  public get<T>(emitter: Emitter<T>): T | STOP {
     const data = this.data.get(emitter)
     return data === undefined && !this.data.has(emitter) ? STOP : data
   }
 
   /** Start walking of an emitter links */
-  walk(emitter: EmitterAny): this {
+  public walk(emitter: EmitterAny): this {
     do {
       const result = emitter.fn(this, emitter.cache)
       this.set(emitter, result)
@@ -54,17 +60,13 @@ export class Event {
     return this
   }
 
-  notify() {
-    this.data.forEach((value, emitter) => value !== STOP && emitter.emit(value))
-  }
-
   /** Return a special token that describe of preventing of walking of emitter children (`to`)
    * @example ```ts
-   * const $oddNumbers = $numbers.chain((n, event) => n % 2 ? n : event.stop())
+   * const $oddNumbers = $numbers.chain((n, cache, event) => n % 2 ? n : event.stop())
    * ```
    */
-  stop(...a: Array<any>): STOP
-  stop(): STOP {
+  public stop(...a: Array<any>): STOP
+  public stop(): STOP {
     return STOP
   }
 }

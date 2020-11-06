@@ -2,18 +2,17 @@
 /* eslint-disable */
 
 import {
-  noop,
-  ReatomError,
-  Collection,
-  F,
   callSafety,
+  Collection,
+  Event,
+  F,
   invalid,
   isFunction,
   STOP,
-  Event,
 } from './internal'
 
-export function spliceOne<T>(list: Array<T>, el: T) {
+// TODO: https://dev.to/chronograph/comment/149e9
+export function deleteFromList<T>(list: Array<T>, el: T) {
   list.splice(list.indexOf(el), 1)
 }
 
@@ -36,22 +35,22 @@ export class Emitter<T> {
   /* Trick for TS structural type system */
   private [EMITTER_TAG]: true
   /** creation sequence number */
-  n: number
+  public n: number
   /** userspace function */
-  fn: (this: Emitter<T>, event: Event, cache: Cache) => STOP | T
+  public fn: EmitterFn<T>
   /** parents - dependencies */
-  up: Array<EmitterAny>
+  public up: Array<EmitterAny>
   /** children - dependents */
-  to: Array<EmitterAny>
+  public to: Array<EmitterAny>
   /** subscribers */
-  su: Array<F>
+  public su: Array<F<[T]>>
   /** temporal cache for userspace data */
-  cache: Cache
+  public cache: Collection
 
-  constructor(fn: F<[Event, Cache], STOP | T>, up: Array<EmitterAny> = []) {
+  constructor(fn: EmitterFn<T>, up: Array<EmitterAny> = []) {
     invalid(!isFunction(fn), 'fn')
     invalid(
-      up.some((l) => l instanceof Emitter === false),
+      up.some(emitter => emitter instanceof Emitter === false),
       'dependency',
     )
 
@@ -72,7 +71,7 @@ export class Emitter<T> {
     this.to.push(child)
   }
   private _unlink(child: EmitterAny) {
-    spliceOne(this.to, child)
+    deleteFromList(this.to, child)
     if (this._isEmpty()) this._cleanup()
   }
 
@@ -80,24 +79,24 @@ export class Emitter<T> {
    * You may extend Emitter and rewrite it to make side-effects
    */
   protected _init() {
-    this.up.forEach((parent) => parent._link(this))
+    this.up.forEach(parent => parent._link(this))
   }
   /** Calls when leave last subscription and dependent link.
    * You may extend Emitter and rewrite it to make side-effects
    */
   protected _cleanup() {
-    this.up.forEach((parent) => parent._unlink(this))
+    this.up.forEach(parent => parent._unlink(this))
     this.cache = {}
   }
 
   /** Create dependent emitter */
-  chain<_T>(fn: F<[Exclude<T, STOP>, Cache, Event], _T>): Emitter<_T> {
+  public chain<_T>(fn: F<[T, Collection, Event], STOP | _T>): Emitter<_T> {
     invalid(!isFunction(fn), 'fn')
-    return new Emitter((t, cache) => fn(t.get(this) as any, cache, t), [this])
+    return new Emitter((t, cache) => fn(t.get(this) as T, cache, t), [this])
   }
 
   /** Subscribe to result of emitter function call */
-  subscribe(callback: F<[T]>): () => void {
+  public subscribe(callback: F<[T]>): () => void {
     invalid(!isFunction(callback), 'callback')
 
     if (this._isEmpty()) this._init()
@@ -109,37 +108,39 @@ export class Emitter<T> {
     return () => {
       if (isSubscribed) {
         isSubscribed = false
-        spliceOne(this.su, callback)
+        deleteFromList(this.su, callback)
         if (this._isEmpty()) this._cleanup()
       }
     }
   }
 
-  /** Emit event to all dependent links and subscribers */
-  dispatch(event = new Event()) {
+  /** Emit event to all dependent links and then notify subscribers */
+  public dispatch(event = new Event()) {
     invalid(this.up.length !== 0, 'dispatch of derived emitter')
     return event.walk(this)
   }
 
-  /** Emit value only to subscribers */
-  emit<T>(value: T) {
-    this.su.forEach((cb) => callSafety(cb, value))
+  /** Emit value to subscribers */
+  public emit(value: T) {
+    this.su.forEach(cb => callSafety(cb, value))
   }
 
-  pipe<T1 extends EmitterAny>(...operators: [F<[this], T1>]): T1
-  pipe<T1 extends EmitterAny, T2 extends EmitterAny>(
+  public pipe<T1 extends EmitterAny>(...operators: [F<[this], T1>]): T1
+  public pipe<T1 extends EmitterAny, T2 extends EmitterAny>(
     ...operators: [F<[this], T1>, F<[T1], T2>]
   ): T2
-  pipe<T1 extends EmitterAny, T2 extends EmitterAny, T3 extends EmitterAny>(
-    ...operators: [F<[this], T1>, F<[T1], T2>, F<[T2], T3>]
-  ): T3
-  pipe<
+  public pipe<
+    T1 extends EmitterAny,
+    T2 extends EmitterAny,
+    T3 extends EmitterAny
+  >(...operators: [F<[this], T1>, F<[T1], T2>, F<[T2], T3>]): T3
+  public pipe<
     T1 extends EmitterAny,
     T2 extends EmitterAny,
     T3 extends EmitterAny,
     T4 extends EmitterAny
   >(...operators: [F<[this], T1>, F<[T1], T2>, F<[T2], T3>, F<[T3], T4>]): T4
-  pipe<
+  public pipe<
     T1 extends EmitterAny,
     T2 extends EmitterAny,
     T3 extends EmitterAny,
@@ -154,7 +155,7 @@ export class Emitter<T> {
       F<[T4], T5>,
     ]
   ): T5
-  pipe(
+  public pipe(
     ...operators: [F<[this], EmitterAny>, ...Array<F<[EmitterAny], EmitterAny>>]
   ): EmitterAny {
     // @ts-expect-error
@@ -162,4 +163,8 @@ export class Emitter<T> {
   }
 }
 
-export type Cache = Collection<unknown>
+export type EmitterFn<T, This extends EmitterAny = Emitter<unknown>> = (
+  this: This,
+  event: Event,
+  cache: Collection,
+) => STOP | T

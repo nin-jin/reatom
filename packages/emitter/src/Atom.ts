@@ -1,27 +1,27 @@
-import { F, Collection, ReatomError, Link, STOP, invalid } from './internal'
+import { Collection, F, invalid, Link, STOP } from './internal'
 
-export class Atom<
+export class Atom<Input, State, Meta extends Collection = {}> extends Link<
   Input,
   State,
-  Meta extends Collection = Collection
-> extends Link<Input, State, { state?: State }, Meta> {
-  up!: [Link<any, Input, any, any>]
+  { state?: State }
+> {
+  up!: [Link<any, Input, any>]
   protected _defaultState: State
   private _reducer: (payload: Input, state: State) => STOP | State
   constructor(options: {
     defaultState: State
     reducer: (payload: Input, state: State) => STOP | State
-    parent: Link<any, Input, any, any>
-    getMeta?: ($atom: Atom<Input, State>) => Meta
+    parent: Link<any, Input, any>
+    meta?: Collection
   }) {
-    const { defaultState, reducer, parent, getMeta } = options
+    const { defaultState, reducer, parent, meta } = options
 
     super({
       parent,
+      meta,
       // @ts-expect-error
-      getMeta,
-      onNext(input, cache, t) {
-        const state = (this as Atom<any, State>).get()
+      onNext(this: Atom<Input, State>, input, cache, t) {
+        const state = this.get()
         const newState = reducer(input, state)
 
         // TODO: rollback

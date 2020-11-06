@@ -2,8 +2,8 @@
 
 export * from './type_utils'
 export * from './utils'
-export * from './Event'
 export * from './Emitter'
+export * from './Event'
 export * from './Transaction'
 export * from './Link'
 export * from './Atom'
