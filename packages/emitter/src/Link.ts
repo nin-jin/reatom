@@ -11,13 +11,17 @@ import {
 
 /* Trick for TS structural type system */
 declare const LINK_TAG: unique symbol
-export const PAYLOAD = Symbol(`@@Reatom: link payload`)
+const PAYLOAD = Symbol(`@@Reatom: link payload`)
 
 export class Link<Input, Output, Cache extends Collection = {}> extends Emitter<
   Output
 > {
   /* Trick for TS structural type system */
   private [LINK_TAG]: true
+  private [PAYLOAD]:
+    | null
+    | { value: Input; kind: 'sync' }
+    | { value: Output; kind: 'async' }
   // FIXME: any
   private _options: LinkConstructorOptions<any, any, any>
   private _onInit?: OnInit<Input, Output, Cache>
@@ -29,16 +33,20 @@ export class Link<Input, Output, Cache extends Collection = {}> extends Emitter<
   constructor(options: LinkConstructorOptions<Input, Output, Cache>) {
     const { onNext, onFail, onInit, meta, parent } = options
 
-    function fn(this: Link<Input, unknown, Cache>, t: Transaction, cache: any) {
+    function fn(
+      this: Link<Input, unknown, Cache>,
+      t: Transaction,
+      cache: Cache,
+    ) {
       invalid(t instanceof Transaction === false, 'transaction type')
 
       let input: any
 
-      if (cache[PAYLOAD]) {
-        const payload = cache[PAYLOAD]
-        cache[PAYLOAD] = null
-        input = payload.value
-        if (payload.kind === 'async') return input
+      if (this[PAYLOAD]) {
+        const payload = this[PAYLOAD]
+        this[PAYLOAD] = null
+        if (payload!.kind === 'async') return input
+        /* else if (payload!.kind === 'sync')*/ input = payload!.value
       } else if (!parent || (input = t.get(parent)) === STOP) return STOP
 
       const result =
@@ -51,13 +59,11 @@ export class Link<Input, Output, Cache extends Collection = {}> extends Emitter<
       if (result instanceof Promise) {
         result.then(
           value => {
-            if (value !== STOP) {
-              cache[PAYLOAD] = { value, kind: 'async' }
-              t.walk(this)
-            }
+            this[PAYLOAD] = { value, kind: 'async' }
+            t.walk(this)
           },
           error => {
-            cache[PAYLOAD] = {
+            this[PAYLOAD] = {
               value: new TransactionError(error),
               kind: 'async',
             }
@@ -117,21 +123,21 @@ export class Link<Input, Output, Cache extends Collection = {}> extends Emitter<
     return new Link(options)
   }
 
-  atom<State>(defaultState: State): Atom<Output, Output | State>
+  atom<State>(defaultState: State): Atom<never, Output | State>
   atom<State>(
     defaultState: State,
     reducer: (payload: Output, state: State) => State,
     options?: {
       meta?: Collection
     },
-  ): Atom<Output, State>
+  ): Atom<never, State>
   atom<State>(
     defaultState: State,
     reducer: (payload: Output, state: State) => State = (v: any) => v,
     options?: {
       meta?: Collection
     },
-  ): Atom<Output, Output | State> {
+  ): Atom<never, Output | State> {
     // FIXME:
     // @ts-ignore
     return new Atom({

@@ -1,17 +1,12 @@
 import { Collection, F, invalid, Link, STOP } from './internal'
 
-export class Atom<Input, State, Meta extends Collection = {}> extends Link<
-  Input,
-  State,
-  { state?: State }
-> {
-  up!: [Link<any, Input, any>]
-  protected _defaultState: State
+export class Atom<Input, State> extends Link<Input, State, { state?: State }> {
+  private _defaultState: State
   private _reducer: (payload: Input, state: State) => STOP | State
   constructor(options: {
     defaultState: State
     reducer: (payload: Input, state: State) => STOP | State
-    parent: Link<any, Input, any>
+    parent?: Link<any, Input, any>
     meta?: Collection
   }) {
     const { defaultState, reducer, parent, meta } = options
@@ -20,7 +15,7 @@ export class Atom<Input, State, Meta extends Collection = {}> extends Link<
       parent,
       meta,
       // @ts-expect-error
-      onNext(this: Atom<Input, State>, input, cache, t) {
+      onNext(this: Atom<Input, State>, input, cache) {
         const state = this.get()
         const newState = reducer(input, state)
 
@@ -28,6 +23,9 @@ export class Atom<Input, State, Meta extends Collection = {}> extends Link<
         return newState === STOP || Object.is(state, newState)
           ? STOP
           : (cache.state = newState)
+      },
+      onInit() {
+        // TODO: update state based on deps if its atom to
       },
     })
 
@@ -40,13 +38,20 @@ export class Atom<Input, State, Meta extends Collection = {}> extends Link<
     invalid(true, `call of atom, use \`set\` instead`)
   }
 
+  set(value: State) {
+    invalid(this.up.length !== 0, `set of derived atom`)
+    // FIXME:
+    // @ts-ignore
+    super.call(value)
+  }
+
   get(): State {
     return 'state' in this.cache
       ? this.cache.state!
       : (this.cache.state = this._defaultState)
   }
 
-  map<T>(map: (payload: State, prevState?: T) => T): Atom<State, T> {
+  map<T>(map: (payload: State, prevState?: T) => T): Atom<never, T> {
     return this.atom(map(this._defaultState), map)
   }
 

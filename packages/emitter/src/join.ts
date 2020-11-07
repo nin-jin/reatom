@@ -11,15 +11,15 @@ import {
 
 /** join atoms handlers to work it with single state */
 export function join<State>(
-  ...links: Array<Atom<any, State, any>>
+  ...links: Array<Atom<any, State>>
 ): Atom<any, State>
 /** join links handlers to work it with single cache */
 export function join<Output, Cache extends Collection = {}>(
   ...links: Array<Link<any, Output, Cache>>
 ): Link<any, Output, Cache>
 export function join(
-  ...links: Array<Link<any, any, any> | Atom<any, any, any>>
-): Link<any, any, any> | Atom<any, any, any> {
+  ...links: Array<Link<any, any, any> | Atom<any, any>>
+): Link<any, any, any> | Atom<any, any> {
   const up = links.map(link => {
     if (link instanceof Atom) atomsCount++
     return link.up[0]
@@ -46,13 +46,13 @@ export function join(
   }
 
   function reducer(input: any[], state: any) {
-    return links.reduce((acc, link, i) => {
+    return links.reduce((acc, atom, i) => {
       const payload = input[i]
 
       if (payload === STOP) return acc
 
       // @ts-ignore
-      const result = link._reducer(payload, acc)
+      const result = atom._reducer(payload, acc)
 
       return result === STOP ? acc : result
     }, state)
@@ -70,23 +70,3 @@ export function join(
         parent,
       })
 }
-
-;(async () => {
-  const a = link((n: number) => n)
-  const b = join(
-    a.atom(0, (n, c) => n + 1),
-    a.atom(0, (n, c) => n + 3),
-    a.atom(0, (n, c) => n + 3),
-    // a.atom(0, (n, c) => n),
-    // a.link((n, c) => n + 3),
-    // a.link((n, c) => n + 3),
-  )
-
-  b.subscribe(v => {
-    v //?
-  })
-
-  a.call(1)
-})().catch(e => {
-  console.log(e)
-})
