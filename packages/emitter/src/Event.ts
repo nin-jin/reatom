@@ -15,12 +15,14 @@ export class Event {
     emitters.forEach(emitter => {
       // tiny implementation of topological sorting,
       // pretty effective, but O(n^2) for `Emitter.to` (bad for a lot of children)
-      for (let i = 0; i < this.queue.length; i++) {
-        const nextEmitter = this.queue[i]
-        if (emitter === nextEmitter) return
-        if (emitter.n >= nextEmitter.n) {
-          this.queue[i] = emitter
-          emitter = nextEmitter
+      if (this.queue.length > 0 && emitter.n > this.queue[this.queue.length - 1].n) {
+        for (let i = 0; i < this.queue.length; i++) {
+          const nextEmitter = this.queue[i]
+          if (emitter === nextEmitter) return
+          if (emitter.n >= nextEmitter.n) {
+            this.queue[i] = emitter
+            emitter = nextEmitter
+          }
         }
       }
       this.queue.push(emitter)
