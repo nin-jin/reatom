@@ -22,24 +22,6 @@ import {
   Unsubscribe,
 } from './internal'
 
-// TODO: tsdx
-// if (process.env.NODE_ENV !== 'production') {
-//   let i = 0
-
-//   var incrementGetStateOveruse = () => {
-//     if (i++ < 3) return
-
-//   incrementGetStateOveruse = () => {}
-
-//     console.warn(
-//       `Full state requests too often, it may slow down the application`,
-//       `Use subscription to patch instead or request partial state by \`getState(atom)\``,
-//     )
-//   }
-
-//   setInterval(() => (i = 0), 3000)
-// }
-
 export function createStore(snapshot: Record<string, any> = {}): Store {
   const actionsComputers = new Map<ActionType, Set<Atom>>()
   const actionsListeners = new Map<ActionType, Set<Fn>>()
@@ -48,10 +30,10 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
   const transactionListeners = new Set<Fn<[TransactionResult]>>()
 
   function collect(atom: Atom, result: Rec = {}) {
-    const { state, deps } = getCache(atom)!
+    const { state, depAtoms } = getCache(atom)!
 
     result[atom.id] = state
-    deps.forEach((dep) => !isActionCreator(dep) && collect(dep.atom, result))
+    depAtoms.forEach((depAtom) => collect(depAtom, result))
 
     return result
   }
@@ -61,21 +43,25 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
     patch: Cache,
     changedAtoms: Array<[Atom, Cache]>,
   ) {
-    const atomCache = getCache(atom)
+    const cache = getCache(atom)
+
     if (atomsListeners.has(atom)) {
-      if (atomCache === undefined) {
-        patch.types.forEach((type) =>
+      if (cache === undefined) {
+        patch.depTypes.forEach((type) =>
           addToSetsMap(actionsComputers, type, atom),
         )
-      } else if (atomCache.types !== patch.types) {
-        patch.types.forEach(
+      } else if (
+        cache.depTypes.length !== patch.depTypes.length
+        || cache.depTypes.some((type, i) => type !== patch.depTypes[i])
+      ) {
+        patch.depTypes.forEach(
           (type) =>
-            atomCache.types.has(type) ||
+            cache.depTypes.includes(type) ||
             addToSetsMap(actionsComputers, type, atom),
         )
-        atomCache.types.forEach(
+        cache.depTypes.forEach(
           (type) =>
-            patch.types.has(type) ||
+            patch.depTypes.includes(type) ||
             delFromSetsMap(actionsComputers, type, atom),
         )
       }
@@ -83,7 +69,7 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
 
     atomsCache.set(atom, patch)
 
-    if (!Object.is(atomCache?.state, patch.state)) {
+    if (!Object.is(cache?.state, patch.state)) {
       changedAtoms.push([atom, patch])
     }
   }
@@ -120,6 +106,8 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
     const transactionResult: TransactionResult = { actions, error, patch }
 
     transactionListeners.forEach((cb) => callSafety(cb, transactionResult))
+
+    if (error) throw error
 
     changedAtoms.forEach((change) =>
       atomsListeners
@@ -194,9 +182,9 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
       listeners!.delete(cb)
       if (listeners!.size === 0) {
         atomsListeners.delete(atom)
-        atomsCache
-          .get(atom)!
-          .types.forEach((type) => delFromSetsMap(actionsComputers, type, atom))
+        const cache = getCache(atom)!
+        cache
+          .depTypes.forEach((type) => delFromSetsMap(actionsComputers, type, atom))
       }
     }
 
@@ -204,9 +192,9 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
       getState(atom)
 
       if (shouldInvalidateTypes) {
-        getCache(atom)!.types.forEach((type) =>
-          addToSetsMap(actionsComputers, type, atom),
-        )
+        const cache = getCache(atom)!
+        cache
+          .depTypes.forEach((type) => addToSetsMap(actionsComputers, type, atom))
       }
 
       return unsubscribe
@@ -245,10 +233,10 @@ export function createStore(snapshot: Record<string, any> = {}): Store {
     return a.length === 1 && isFunction(a[0])
       ? subscribeTransaction(a[0])
       : isAtom(a[0]) && isFunction(a[1])
-      ? subscribeAtom(a[0], a[1])
-      : isActionCreator(a[0]) && isFunction(a[1])
-      ? subscribeAction(a[0], a[1])
-      : invalid(true, `subscribe arguments`)
+        ? subscribeAtom(a[0], a[1])
+        : isActionCreator(a[0]) && isFunction(a[1])
+          ? subscribeAction(a[0], a[1])
+          : invalid(true, `subscribe arguments`)
   }
 
   const store = {

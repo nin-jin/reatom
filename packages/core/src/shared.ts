@@ -9,9 +9,7 @@ import {
   Transaction,
 } from './internal'
 
-export const IS_DEV = /* TODO: `process.env.NODE_ENV === 'development'` */ true
-
-export const noop: Fn = () => {}
+export const noop: Fn = () => { }
 
 export function callSafety<I extends any[], O, This = any>(
   this: This,
@@ -50,6 +48,13 @@ export function delFromSetsMap<T>(
   if (set !== undefined) {
     set.delete(value)
     if (set.size === 0) map.delete(key)
+  }
+}
+
+export function pushUnique<T>(target: Array<T>, source: Array<T>) {
+  for (let i = 0; i < source.length; i++) {
+    const el = source[i]
+    if (!target.includes(el)) target.push(el)
   }
 }
 
@@ -107,19 +112,20 @@ export function createTransaction(
   const transaction: Transaction = {
     actions,
     effects: [],
-    process(atom, cache) {
+    process(atom) {
       let atomPatch = patch.get(atom)
 
       if (!atomPatch) {
         atomPatch = atom(
           transaction,
-          getCache(atom) ??
-            cache ?? {
-              deps: [],
-              ctx: undefined,
-              state: snapshot[atom.id],
-              types: new Set(),
-            },
+          getCache(atom) ?? {
+            ctx: undefined,
+            depAtoms: [],
+            depStates: [],
+            depTypes: [],
+            depTypesSelfIndex: 0,
+            state: snapshot[atom.id],
+          },
         )
 
         patch.set(atom, atomPatch)

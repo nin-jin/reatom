@@ -10,8 +10,8 @@ export type Merge<Intersection> = Intersection extends (...a: any[]) => any
   ? Intersection
   : Intersection extends object
   ? {
-      [Key in keyof Intersection]: Intersection[Key]
-    }
+    [Key in keyof Intersection]: Intersection[Key]
+  }
   : Intersection
 
 export type NotFn<T> = T extends Fn ? never : T
@@ -22,7 +22,7 @@ export type ActionType = string
 
 export type Unsubscribe = () => void
 
-export type AtomDep = AC | { atom: Atom; cache: Cache }
+export type AtomDep = { atom: Atom; state: unknown }
 
 export type Cache<State = any> = {
   /** Local mutable context */
@@ -36,17 +36,18 @@ export type Cache<State = any> = {
    * then atom returns to active
    * and may been stale.
    */
-  readonly deps: Array<AtomDep>
-
-  readonly types: Set<ActionType>
+  readonly depAtoms: Array<Atom>
+  readonly depStates: Array<unknown>
+  readonly depTypes: Array<string>
+  readonly depTypesSelfIndex: number
 
   readonly state: State
 }
 
 export type CacheAsArgument<State = any> = {
   [K in keyof Cache<State>]: K extends `ctx` | `state`
-    ? Cache<State>[K] | undefined
-    : Cache<State>[K]
+  ? Cache<State>[K] | undefined
+  : Cache<State>[K]
 }
 
 export type Atom<State = any> = {
@@ -87,17 +88,17 @@ export type ActionCreator<
   } = {
     payload: Arguments[0]
   },
-> = {
-  (...a: Arguments): CustomAction<ActionData>
+  > = {
+    (...a: Arguments): CustomAction<ActionData>
 
-  /** Create the action creator action and dispatch it to `defaultStore` */
-  dispatch(...args: Arguments): ReturnType<Store['dispatch']>
+    /** Create the action creator action and dispatch it to `defaultStore` */
+    dispatch(...args: Arguments): ReturnType<Store['dispatch']>
 
-  /** Subscribe to dispatches of the action to `defaultStore` */
-  subscribe(cb: Fn<[action: CustomAction<ActionData>]>): Unsubscribe
+    /** Subscribe to dispatches of the action to `defaultStore` */
+    subscribe(cb: Fn<[action: CustomAction<ActionData>]>): Unsubscribe
 
-  type: ActionType
-}
+    type: ActionType
+  }
 
 /** Shortcut to typed ActionCreator */
 export type AC<T = any> = ActionCreator<any[], { payload: T }>

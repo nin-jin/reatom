@@ -4,7 +4,6 @@ import {
   defaultStore,
   Fn,
   invalid,
-  IS_DEV,
   isFunction,
   isString,
 } from './internal'
@@ -22,9 +21,9 @@ export function declareAction<
   ActionData extends { payload: any; type?: never; targets?: Array<Atom> } = {
     payload: Arguments[0]
   },
->(
-  mapper: (...a: Arguments) => ActionData,
-  type?: string,
+  >(
+    mapper: (...a: Arguments) => ActionData,
+    type?: string,
 ): ActionCreator<Arguments, ActionData>
 export function declareAction(
   typeOrMapper?: string | Fn,
@@ -34,13 +33,11 @@ export function declareAction(
   const actionCreator: ActionCreator = (...a) => {
     const action = mapper(...a)
 
-    if (IS_DEV) {
-      invalid(`type` in action, `action type in created action data`)
-      invalid(
-        `payload` in action === false,
-        `missing payload in created action data`,
-      )
-    }
+    invalid(`type` in action, `action type in created action data`)
+    invalid(
+      `payload` in action === false,
+      `missing payload in created action data`,
+    )
 
     return Object.assign({}, action, { type })
   }
